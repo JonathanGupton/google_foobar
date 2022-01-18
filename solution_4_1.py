@@ -93,21 +93,16 @@ def is_looping_pair(n1, n2):  # int, int -> bool
         n1, n2 = _min + _min, _max - _min
 
 
-
-def solution(banana_list):
-    """
-    Strategy:  Pack as many pairs into the found set as will fit, swapping
-    as necessary
-    """
-    unpaired_set = set(range(len(banana_list)))  # set[int]
-    pairings = {i : None for i in unpaired_set}  # dict[int, int]
-    pair_map = defaultdict(set)  # dict[int, set(int)]
-
+def make_looping_pairs(banana_list):
+    pair_map = defaultdict(set)
     for i, j in combinations(range(len(banana_list)), 2):
         if is_looping_pair(banana_list[i], banana_list[j]):
             pair_map[i].add(j)
             pair_map[j].add(i)
+    return pair_map
 
+
+def find_minimum_unpaired(pair_map, pairings, unpaired_set):
     for k, pairable_set in pair_map.items():
         if pairings[k] is None:
             if pairable_set & unpaired_set:
@@ -117,7 +112,9 @@ def solution(banana_list):
                     unpaired_set.difference_update({k, pairable_value})
                     break
             else:
-                # swap logic
+                # swap logic ->> Recursively search for swappable pairs?
+                # I am not sure how I would keep track of state and swaps
+                # without an unbreakable recursion should the swapping fail
                 other_unpaired = unpaired_set - {k}
                 if other_unpaired:
                     for i in pair_map[k]:
@@ -130,9 +127,18 @@ def solution(banana_list):
                                     unpaired_set.difference_update({k, j})
                                     break
                             break
-
     return len(unpaired_set)
 
+
+def solution(banana_list):
+    """
+    Strategy:  Pack as many pairs into the found set as will fit, swapping
+    as necessary
+    """
+    unpaired_set = set(range(len(banana_list)))  # set[int]
+    pairings = {i : None for i in unpaired_set}  # dict[int, int]
+    pair_map = make_looping_pairs(banana_list)
+    return find_minimum_unpaired(pair_map, pairings, unpaired_set)
 
 
 def _test_is_looping_pair():
