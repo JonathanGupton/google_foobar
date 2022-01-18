@@ -62,7 +62,7 @@ from fractions import gcd
 from itertools import combinations
 
 
-def is_looping_pair(n1, n2):  # int, int -> bool
+def is_looping_pair(n1, n2):
     """
     Classify if a pair of trainers will loop or break
 
@@ -94,6 +94,15 @@ def is_looping_pair(n1, n2):  # int, int -> bool
 
 
 def make_looping_pairs(banana_list):
+    """
+    Args:
+      banana_list: list[int] containing the count of bananas for trainer at
+        index i
+
+    Returns:
+      dict[int, set(Optional[int])] A map of the banana_list index to those
+      other indices that will cause the trainers to loop indefinitely.
+    """
     pair_map = defaultdict(set)
     for i, j in combinations(range(len(banana_list)), 2):
         if is_looping_pair(banana_list[i], banana_list[j]):
@@ -104,10 +113,17 @@ def make_looping_pairs(banana_list):
 
 def find_minimum_unpaired(pair_map, pairings, unpaired_set):
     """
-    :param pair_map:  dict[int, set(int)]
-    :param pairings: dict[int, Optional[int]]
-    :param unpaired_set: set[int]
-    :return: int number of unpaired values remaining
+    Match the maximum number of pairings and return the unpaired count.
+
+    args:
+      pair_map: dict[int, set(int)] A dictionary of values and the set of
+        pairable values
+      pairings: dict[int, Optional[int]] A map of values to their assigned
+        pair.
+      unpaired_set: set[int]  The set of values not currently assigned a pair.
+
+    return:
+      int number of unpaired values remaining.
     """
     for k, pairable_set in pair_map.items():
         if pairings[k] is None:
@@ -117,10 +133,8 @@ def find_minimum_unpaired(pair_map, pairings, unpaired_set):
                     unpaired_set.difference_update({k, pairable_value})
                     break
             else:
-                # swap logic ->> Recursively search for swappable pairs?
-                # I am not sure how I would keep track of state and swaps
-                # without an unbreakable recursion should the swapping fail
                 other_unpaired = unpaired_set - {k}
+                pair_found = False
                 if other_unpaired:
                     for i in pair_map[k]:
                         if pair_map[i] & other_unpaired:
@@ -130,19 +144,21 @@ def find_minimum_unpaired(pair_map, pairings, unpaired_set):
                                     pairings[k], pairings[i] = i, k
                                     pairings[j], pairings[temp] = temp, j
                                     unpaired_set.difference_update({k, j})
+                                    pair_found = True
                                     break
-                            break
+                            if pair_found:
+                                break
     return len(unpaired_set)
 
 
 def solution(banana_list):
     """
-    Strategy:  Pack as many pairs into the found set as will fit, swapping
-    as necessary
+    Find the minimum number of trainers that are left unpaired after maximizing
+    the number of looping pairs.
     """
     unpaired_set = set(range(len(banana_list)))  # set[int]
-    pairings = {i : None for i in unpaired_set}  # dict[int, int]
-    pair_map = make_looping_pairs(banana_list)
+    pairings = {i : None for i in unpaired_set}  # dict[int, Optional[int]]
+    pair_map = make_looping_pairs(banana_list)   # dict[int, set(Optional[int])]
     return find_minimum_unpaired(pair_map, pairings, unpaired_set)
 
 
@@ -199,7 +215,6 @@ def _test_solution(solution_fxn):
     print solution_fxn([randint(1, 1073741823) for _ in range(100)])
 
     print
-
 
 
 if __name__ == '__main__':
