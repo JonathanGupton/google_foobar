@@ -103,12 +103,17 @@ def make_looping_pairs(banana_list):
 
 
 def find_minimum_unpaired(pair_map, pairings, unpaired_set):
+    """
+    :param pair_map:  dict[int, set(int)]
+    :param pairings: dict[int, Optional[int]]
+    :param unpaired_set: set[int]
+    :return: int number of unpaired values remaining
+    """
     for k, pairable_set in pair_map.items():
         if pairings[k] is None:
             if pairable_set & unpaired_set:
                 for pairable_value in pairable_set & unpaired_set:
-                    pairings[k] = pairable_value
-                    pairings[pairable_value] = k
+                    pairings[k], pairings[pairable_value] = pairable_value, k
                     unpaired_set.difference_update({k, pairable_value})
                     break
             else:
@@ -159,6 +164,19 @@ def _test_is_looping_pair():
     print is_looping_pair(13, 19) == False
 
 
+def _test_find_minimum_unpaired():
+    pair_map = defaultdict(set, {0: {3, 4, 5}, 1: {2, 4}, 2: {1, 3, 4}, 3: {0, 2, 5}, 4: {0, 1, 2, 5}, 5: {0, 3, 4}})
+    pairings = {0: None, 1: None, 2: None, 3: None, 4: None, 5: None}
+    unpaired_set = {0, 1, 2, 3, 4, 5}
+    print find_minimum_unpaired(pair_map, pairings, unpaired_set) == 0
+
+    pair_map = defaultdict(set, {0: {3, 4, 5}, 1: {2, 4}, 2: {1, 3, 4}, 3: {0, 2, 5}, 4: {0, 1, 2, 5}, 5: {0, 3, 4}})
+    pairings = {0: 5, 1: None, 2: None, 3: None, 4: None, 5: 0}
+    unpaired_set = {1, 2, 3, 4}
+    print find_minimum_unpaired(pair_map, pairings, unpaired_set) == 0
+
+
+
 def _test_solution(solution_fxn):
     from random import randint
     print solution_fxn([1]) == 1
@@ -169,16 +187,15 @@ def _test_solution(solution_fxn):
     print solution_fxn([1, 7, 3, 19, 13, 21]) == 0
     print solution_fxn([3, 7, 3, 7, 3, 7]) == 0
     print solution_fxn([1, 1, 1, 1, 1, 3, 7, 13, 19, 21]) == 2
-    print solution_fxn([1, 27, 41, 52, 74, 99])
-    print solution_fxn([1, 1, 1, 1, 1, 7, 3, 21])
-    print solution_fxn([i for i in range(1, 101)])
+    print solution_fxn([1, 27, 41, 52, 74, 99]) == 0
+    print solution_fxn([1, 1, 1, 1, 1, 1, 7, 3, 21]) == 5
+    print solution_fxn([i for i in range(1, 101)]) == 0
     print solution_fxn([randint(1, 1073741823) for _ in range(100)])
 
     # come up with recursive match where multiple swaps are required???
-    print solution_fxn([1, 3, 7, 13, 19, 21, 1, 3, 7, 13, 19, 21]) == 0
+    # print solution_fxn([1, 3, 7, 13, 19, 21, 1, 3, 7, 13, 19, 21]) == 0
 
 
 if __name__ == '__main__':
-
-
-    _test_solution(solution)
+    # _test_solution(solution)
+    _test_find_minimum_unpaired()
