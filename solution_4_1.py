@@ -147,6 +147,7 @@ def solution(banana_list):
 
 
 def _test_is_looping_pair():
+    print "_is_looping_pair"
     print is_looping_pair(1, 4) == True
     print is_looping_pair(1, 3) == False
     print is_looping_pair(3, 5) == False
@@ -162,9 +163,11 @@ def _test_is_looping_pair():
     print is_looping_pair(3, 13) == False
     print is_looping_pair(3, 19) == True
     print is_looping_pair(13, 19) == False
+    print
 
 
 def _test_find_minimum_unpaired():
+    print "_test_find_minimum_unpaired"
     pair_map = defaultdict(set, {0: {3, 4, 5}, 1: {2, 4}, 2: {1, 3, 4}, 3: {0, 2, 5}, 4: {0, 1, 2, 5}, 5: {0, 3, 4}})
     pairings = {0: None, 1: None, 2: None, 3: None, 4: None, 5: None}
     unpaired_set = {0, 1, 2, 3, 4, 5}
@@ -175,10 +178,13 @@ def _test_find_minimum_unpaired():
     unpaired_set = {1, 2, 3, 4}
     print find_minimum_unpaired(pair_map, pairings, unpaired_set) == 0
 
+    print
+
 
 
 def _test_solution(solution_fxn):
     from random import randint
+    print "_test_solution"
     print solution_fxn([1]) == 1
     print solution_fxn([1, 1]) == 2
     print solution_fxn([1, 1, 1]) == 3
@@ -192,10 +198,11 @@ def _test_solution(solution_fxn):
     print solution_fxn([i for i in range(1, 101)]) == 0
     print solution_fxn([randint(1, 1073741823) for _ in range(100)])
 
-    # come up with recursive match where multiple swaps are required???
-    # print solution_fxn([1, 3, 7, 13, 19, 21, 1, 3, 7, 13, 19, 21]) == 0
+    print
+
 
 
 if __name__ == '__main__':
-    # _test_solution(solution)
     _test_find_minimum_unpaired()
+    _test_find_minimum_unpaired()
+    _test_solution(solution)
