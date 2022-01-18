@@ -56,10 +56,10 @@ Output:
     0
 
 """
-from collections import Counter
+
+from collections import defaultdict
 from fractions import gcd
 from itertools import combinations
-import heapq
 
 
 def is_looping_pair(n1, n2):  # int, int -> bool
@@ -95,29 +95,43 @@ def is_looping_pair(n1, n2):  # int, int -> bool
 
 
 def solution(banana_list):
-    loop_status = {}  # dict[tuple[int, int], int] {(n_bananas, n_bananas): loop_bool}
-    banana_groups = {}  # dict[frozenset[int,..], int]
+    """
+    Strategy:  Pack as many pairs into the found set as will fit, swapping
+    as necessary
+    """
+    unpaired_set = set(range(len(banana_list)))  # set[int]
+    pairings = {i : None for i in unpaired_set}  # dict[int, int]
+    pair_map = defaultdict(set)  # dict[int, set(int)]
 
-    def search_pairs(banana_slice):
-        if not banana_slice:
-            return 0
-        if tuple(banana_slice) in banana_groups:
-            return banana_groups[tuple(banana_slice)]
+    for i, j in combinations(range(len(banana_list)), 2):
+        if is_looping_pair(banana_list[i], banana_list[j]):
+            pair_map[i].add(j)
+            pair_map[j].add(i)
 
-        min_trainers = len(banana_slice)
-        t1 = banana_slice[0]
-        for t2 in range(1, len(banana_slice)):
-            pair = (t1, banana_slice[t2])
-            if pair not in loop_status:
-                loop_status[pair] = is_looping_pair(*pair)
-            n_trainers = 0 if loop_status[pair] else 2
-            combination = n_trainers + search_pairs(banana_slice[1:t2] + banana_slice[t2+1:])
-            min_trainers = combination if combination < min_trainers else min_trainers
-        banana_groups[tuple(banana_slice)] = min_trainers
-        return min_trainers
+    for k, pairable_set in pair_map.items():
+        if pairings[k] is None:
+            if pairable_set & unpaired_set:
+                for pairable_value in pairable_set & unpaired_set:
+                    pairings[k] = pairable_value
+                    pairings[pairable_value] = k
+                    unpaired_set.difference_update({k, pairable_value})
+                    break
+            else:
+                # swap logic
+                other_unpaired = unpaired_set - {k}
+                if other_unpaired:
+                    for i in pair_map[k]:
+                        if pair_map[i] & other_unpaired:
+                            for j in pair_map[i] & other_unpaired:
+                                if pairings[i] in pair_map[j]:
+                                    temp = pairings[i]
+                                    pairings[k], pairings[i] = i, k
+                                    pairings[j], pairings[temp] = temp, j
+                                    unpaired_set.difference_update({k, j})
+                                    break
+                            break
 
-    ret_val = search_pairs(banana_list)
-    return ret_val
+    return len(unpaired_set)
 
 
 
@@ -140,28 +154,25 @@ def _test_is_looping_pair():
 
 
 def _test_solution(solution_fxn):
+    from random import randint
+    print solution_fxn([1]) == 1
     print solution_fxn([1, 1]) == 2
-    print solution_fxn([1, 1, 1, 1, 1, 7, 3, 21, 13, 19]) == 2
-    print solution_fxn([1, 7, 3, 21, 13, 19]) == 0
+    print solution_fxn([1, 1, 1]) == 3
+    print solution_fxn([1, 1, 1, 1]) == 4
+    print solution_fxn([1, 3, 7, 13, 19, 21]) == 0
+    print solution_fxn([1, 7, 3, 19, 13, 21]) == 0
+    print solution_fxn([3, 7, 3, 7, 3, 7]) == 0
+    print solution_fxn([1, 1, 1, 1, 1, 3, 7, 13, 19, 21]) == 2
     print solution_fxn([1, 27, 41, 52, 74, 99])
     print solution_fxn([1, 1, 1, 1, 1, 7, 3, 21])
-    # print solution_fxn([i for i in range(1, 101)])
+    print solution_fxn([i for i in range(1, 101)])
+    print solution_fxn([randint(1, 1073741823) for _ in range(100)])
 
-# l1 = solution([1, 1])
-# l2 = solution([1, 7, 3, 21, 13, 19])
-# l = [1, 7, 3, 21, 13, 19]
-#
-#
-# def all_pairs(lst):
-#     a = lst[0]
-#     for i in range(1, len(lst)):
-#         pair = (a, lst[i])
-#         for rest in all_pairs(lst[1:i] + lst[i + 1:]):
-#             yield [pair] + rest
-#
-_test_solution(solution)
-#
-# l = [1, 7, 3, 21, 13, 19]
-# l = solution2(l)
+    # come up with recursive match where multiple swaps are required???
+    print solution_fxn([1, 3, 7, 13, 19, 21, 1, 3, 7, 13, 19, 21]) == 0
 
-# s = solution([1, 1, 1, 7, 3, 21, 13, 19])
+
+if __name__ == '__main__':
+
+
+    _test_solution(solution)
