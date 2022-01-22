@@ -1,6 +1,3 @@
-# start time 4:00 1/18
-# # end time 4:00 2/2
-
 """
 You've blown up the LAMBCHOP doomsday device and relieved the bunnies of their
 work duties -- and now you need to escape from the space station as quickly and
@@ -96,10 +93,24 @@ from collections import defaultdict
 
 
 class Vertex(object):
+    """A graph node with height and excess capacity information.
+
+    Attributes:
+      h:  The integer height of the vertex.
+      e:  The integer excess of the vertex.
+    """
     __slots__ = ("h", "e")
 
     def __init__(self, h=0, e=0):
         # type: (Vertex, int, int) -> None
+        """Initialize a Vortex object.
+
+        Args:
+          h: int
+            The height of the vertex.  Defaults to 0 height.
+          e: int
+            The excess flow at the vertex.  Defaults to 0 excess.
+        """
         self.h = h
         self.e = e
 
@@ -109,10 +120,31 @@ class Vertex(object):
 
 
 class Arc(object):
+    """A graph edge with capacity and flow information.
+
+    Attributes:
+      v:  A Union[str, int] vertex id
+      u:  A Union[str, int] vertex id
+      capacity: The integer max flow between vertices (u, v).
+      flow: The integer current flow between vertices (u, v).  The default
+        value of flow is 0.
+    """
     __slots__ = ("u", "v", "flow", "capacity")
 
     def __init__(self, u, v, capacity, flow=0):
         # type: (Arc, Union[int, str], Union[int, str], int, int) -> None
+        """Initialize an arc connecting vertex u and vertex v.
+
+        Args:
+          v:  A Union[str, int] vertex id.
+          u:  A Union[str, int] vertex id.
+          capacity: The integer max flow between vertices (u, v).
+          flow: The integer current flow between vertices (u, v).  The default
+            value of flow is 0.
+
+        Return:
+          None
+        """
         self.u = u
         self.v = v
         self.capacity = capacity
@@ -127,14 +159,36 @@ class Arc(object):
 
 
 class Graph(object):
+    """A flow network graph.
+
+     Attributes:
+       arc:  dict[Union[int, str], dict[Union[int, str], Arc]]
+         A dict of vertex id's mapped to their adjacent vertices and arc
+         values.
+       vertex:  dict[Union[int, str], Vertex]
+        A dict of vertex id's and their associated vertex values.
+    """
     __slots__ = ("arc", "vertex")
 
     def __init__(self):
-        self.vertex = {}  # dict[Node, Vertex]
-        self.arc = defaultdict(dict)  # dict[Node, dict[Node, Arc]]
+        self.vertex = {}
+        self.arc = defaultdict(dict)
 
     def add_arc(self, u, v, capacity):
         # type: (Graph, Union[int, str], Union[int, str], int) -> None
+        """Add an arc connecting vertex u and vertex v to the graph.
+
+        Args:
+        u:  Union[int, str]
+          The vertex u.
+        v:  Union[int, str]
+          The vertex v.
+        Capacity: int
+          The capacity of flow for arc(u, v).
+
+        Returns:
+          None
+        """
         self.arc[u][v] = Arc(u, v, capacity)
         for node in (u, v):
             if node not in self.vertex:
@@ -142,6 +196,12 @@ class Graph(object):
 
     def get_max_flow(self):
         # type: () -> int
+        """Get the max flow for this graph.
+
+        Return: int
+          Return the max flow for this graph.
+        """
+
         self._preflow()
 
         while self._overflow_vertex() >= 0:
@@ -153,6 +213,16 @@ class Graph(object):
 
     def _push(self, u):
         # type: (Graph, Union[int, str]) -> bool
+        """Push flow downhill from vertex u.
+
+        Args:
+          u: Union[int, str]
+            The node from which to push excess flow.
+
+        Returns:  bool
+          Return True if excess flow can be pushed to another Vertex and False
+            if not.
+        """
         for v in self.arc[u]:
             if self.arc[u][v].flow == self.arc[u][v].capacity:
                 continue
@@ -175,6 +245,18 @@ class Graph(object):
 
     def _relabel(self, u):
         # type: (Graph, int) -> None
+        """Relabel the given vertex.
+
+        Increment the height of the given vertex to the minimum height that
+          allows for a future push action.
+
+        Args:
+            u: Union[int, str]
+              The node whose height is to be incremented.
+
+        Return:
+            None
+        """
         min_height = float("inf")
         for v in self.arc[u]:
             if (self.arc[u][v].flow != self.arc[u][v].capacity) \
@@ -184,9 +266,10 @@ class Graph(object):
 
     def _preflow(self):
         # type: () -> None
-        """
-        Args:
-          s:  Node source index
+        """Preflow the graph.
+
+        Set the source vertex to the height n-vertices and saturate all edges
+        adjacent to the source.
 
         Returns:
           None
@@ -202,6 +285,11 @@ class Graph(object):
 
     def _overflow_vertex(self):
         # type: () -> int
+        """Find an overflowing vertex.
+
+        Return:
+             Returns an overflowing vertex if found, otherwise returns -1.
+        """
         for u in self.vertex:
             if u not in ('s', 't') and self.vertex[u].e > 0:
                 return u
@@ -215,7 +303,7 @@ def solution(entrances, exits, path):
     Find the max flow in the given graph.
 
     Find the max flow of the supplied path using a push-relabel max flow
-      algorithm.  A synethic source and synethic sink are supplied to account
+      algorithm.  A synthetic source and synthetic sink are supplied to account
       for multiple-entrances and multiple-exits.
 
     Args:
@@ -224,9 +312,9 @@ def solution(entrances, exits, path):
       exits:  list[int]
         The list of sink locations on the path.
       path:  list[list[int]]
-        The list of corridors with their int flow capacity to the indexed
-          corridor.  For example path[A][B] = C is equivalent to edge (a, b)
-          having capacity C.
+        The list of corridors with their flow capacity (int) to the
+          corridor (int index value).  For example path[A][B] = C is equivalent
+          to edge (a, b) having capacity C.
 
     Returns:
       Integer max flow
@@ -275,7 +363,6 @@ def _test_max_flow():
     print max_flow == 3
 
 
-
 def _test_solution():
     print solution([0, 1], [4, 5], [
         [0, 0, 4, 6, 0, 0],
@@ -295,13 +382,5 @@ def _test_solution():
 
 
 if __name__ == '__main__':
-    # _test_max_flow()
+    _test_max_flow()
     _test_solution()
-    # a = solution([0, 1], [4, 5], [
-    #     [0, 0, 4, 6, 0, 0],
-    #     [0, 0, 5, 2, 0, 0],
-    #     [0, 0, 0, 0, 4, 4],
-    #     [0, 0, 0, 0, 6, 6],
-    #     [0, 0, 0, 0, 0, 0],
-    #     [0, 0, 0, 0, 0, 0]
-    # ])
