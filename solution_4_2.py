@@ -92,42 +92,147 @@ Output:
     16
 
 """
-from itertools import product
-
-def push():
-    pass
 
 
-def relabel():
-    pass
+class Vertex(object):
+    __slots__ = ("height", "excess")
+
+    def __init__(self, height=0, excess=0):
+        self.height = height  # int
+        self.excess = excess  # int
+
+    def __repr__(self):
+        return "Vertex(height={}, excess={})".format(self.height, self.excess)
 
 
-def initialize_graph(entrances, exits, paths):
-    pass
+class Edge(object):
+    __slots__ = ("u", "v", "flow", "capacity")
+
+    def __init__(self, u, v, capacity, flow=0):
+        self.u = u
+        self.v = v
+        self.capacity = capacity
+        self.flow = flow
+
+    def __repr__(self):
+        return "Edge(u={}, v={}, flow={}, capacity={})".format(self.u,
+                                                               self.v,
+                                                               self.flow,
+                                                               self.capacity)
+
+
+class Graph(object):
+    __slots__ = ("n_vertices", "edge", "vertex")
+
+    def __init__(self, n_vertices):
+        self.n_vertices = n_vertices
+        self.vertex = [Vertex(0, 0) for _ in range(n_vertices)]
+        self.edge = []
+
+    def add_edge(self, u, v, capacity):
+        self.edge.append(Edge(u, v, capacity))
+
+    def get_max_flow(self, s, t):
+        self._preflow(s)
+
+        while self._overflow_vertex() >= 0:
+            u = self._overflow_vertex()
+            if not self._push(u):
+                self._relabel(u)
+
+        return self.vertex[t].excess
+
+    def _push(self, u):
+        for i, edge in filter(lambda e: e[1].u == u, enumerate(self.edge)):
+            if edge.flow == edge.capacity:
+                continue
+
+            if self.vertex[u].height > self.vertex[edge.v].height:
+                flow = min(edge.capacity - edge.flow, self.vertex[u].excess)
+                self.vertex[u].excess -= flow
+                self.vertex[edge.v].excess += flow
+                edge.flow += flow
+                self._update_reverse_edge_flow(i, flow)
+                return True
+        return False
+
+    def _relabel(self, u):
+        min_height = float("inf")
+        for edge in filter(lambda e: (e.u == u) and (e.flow != e.capacity),
+                           self.edge):
+            if self.vertex[edge.v].height < min_height:
+                min_height = self.vertex[edge.v].height
+                self.vertex[u].height = min_height + 1
+
+    def _preflow(self, s):  # int
+        """
+        args:
+          s:  int source index
+
+        returns:
+          None
+        """
+        self.vertex[s].height = self.n_vertices
+        for edge in filter(lambda e: e.u == s, self.edge):
+            edge.flow = edge.capacity
+            self.vertex[edge.v].excess += edge.flow
+            self.edge.append(Edge(u=edge.v, v=s, capacity=0, flow=-edge.flow))
+
+    def _update_reverse_edge_flow(self, i, flow):
+        u, v = self.edge[i].v, self.edge[i].u
+        for edge in filter(lambda e: e.v == v and e.u == u, self.edge):
+            edge.flow -= flow
+            break
+        else:
+            self.edge.append(Edge(u, v, capacity=flow, flow=0))
+
+    def _overflow_vertex(self):
+        for vertex_idx, vertex in enumerate(self.vertex[1:-1], 1):
+            if vertex.excess > 0:
+                return vertex_idx
+        else:
+            return -1
+
+
+def _test_max_flow():
+    vertices = 6
+    g = Graph(vertices)
+    g.add_edge(0, 1, 16)
+    g.add_edge(0, 2, 13)
+    g.add_edge(1, 2, 10)
+    g.add_edge(2, 1, 4)
+    g.add_edge(1, 3, 12)
+    g.add_edge(2, 4, 14)
+    g.add_edge(3, 2, 9)
+    g.add_edge(3, 5, 20)
+    g.add_edge(4, 3, 7)
+    g.add_edge(4, 5, 4)
+    s = 0
+    t = 5
+    max_flow = g.get_max_flow(s, t)
+    print max_flow == 23
+
+    vertices = 4
+    g = Graph(vertices)
+    g.add_edge(0, 1, 1)
+    g.add_edge(0, 2, 100)
+    g.add_edge(1, 2, 100)
+    g.add_edge(2, 1, 1)
+    g.add_edge(1, 3, 100)
+    g.add_edge(2, 3, 1)
+    s = 0
+    t = 3
+    max_flow = g.get_max_flow(s, t)
+    print max_flow == 3
 
 
 def solution(entrances, exits, path):
-
-    def push():
-        pass
-
-    def relabel():
-        pass
-
-    n_nodes = len(path)
-    F = [[0] * n_nodes for _ in range(n_nodes)]  # Holds n capacity
-    # residual capacity from u to v is Path[u][v] - F[u][v]
-
-    height = [n_nodes] + [0] * len(path) + [0]
-    excess = [0] * n_nodes
-
-
-
+    pass
 
 
 def _test_solution():
-    print solution([0, 1],[4, 5],[
-            [0, 0, 4, 6, 0, 0],
+    print solution([0, 1], [4, 5], [
+        [0, 0, 4, 6, 0, 0],
             [0, 0, 5, 2, 0, 0],
             [0, 0, 0, 0, 4, 4],
             [0, 0, 0, 0, 6, 6],
@@ -143,11 +248,12 @@ def _test_solution():
                     ]) == 6
 
 
-solution([0, 1],[4, 5],[
-            [0, 0, 4, 6, 0, 0],
-            [0, 0, 5, 2, 0, 0],
-            [0, 0, 0, 0, 4, 4],
-            [0, 0, 0, 0, 6, 6],
-            [0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0]
-        ])
+if __name__ == '__main__':
+    a = solution([0, 1], [4, 5], [
+        [0, 0, 4, 6, 0, 0],
+        [0, 0, 5, 2, 0, 0],
+        [0, 0, 0, 0, 4, 4],
+        [0, 0, 0, 0, 6, 6],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0]
+    ])
