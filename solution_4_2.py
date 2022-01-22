@@ -92,153 +92,163 @@ Output:
     16
 
 """
+from collections import defaultdict
 
 
 class Vertex(object):
-    __slots__ = ("height", "excess")
+    __slots__ = ("h", "e")
 
-    def __init__(self, height=0, excess=0):
-        self.height = height  # int
-        self.excess = excess  # int
+    def __init__(self, h=0, e=0):
+        # type: (Vertex, int, int) -> None
+        self.h = h
+        self.e = e
 
     def __repr__(self):
-        return "Vertex(height={}, excess={})".format(self.height, self.excess)
+        # type: () -> str
+        return "Vertex(h={}, e={})".format(self.h, self.e)
 
 
-class Edge(object):
+class Arc(object):
     __slots__ = ("u", "v", "flow", "capacity")
 
     def __init__(self, u, v, capacity, flow=0):
+        # type: (Arc, Union[int, str], Union[int, str], int, int) -> None
         self.u = u
         self.v = v
         self.capacity = capacity
         self.flow = flow
 
     def __repr__(self):
-        return "Edge(u={}, v={}, flow={}, capacity={})".format(self.u,
-                                                               self.v,
-                                                               self.flow,
-                                                               self.capacity)
+        # type: () -> str
+        return "Arc(u={}, v={}, flow={}, capacity={})".format(self.u,
+                                                              self.v,
+                                                              self.flow,
+                                                              self.capacity)
 
 
 class Graph(object):
-    __slots__ = ("n_vertices", "edge", "vertex")
+    __slots__ = ("arc", "vertex")
 
-    def __init__(self, n_vertices):
-        self.n_vertices = n_vertices
-        self.vertex = [Vertex(0, 0) for _ in range(n_vertices)]
-        self.edge = []
+    def __init__(self):
+        self.vertex = {}  # dict[Node, Vertex]
+        self.arc = defaultdict(dict)  # dict[Node, dict[Node, Arc]]
 
-    def add_edge(self, u, v, capacity):
-        self.edge.append(Edge(u, v, capacity))
+    def add_arc(self, u, v, capacity):
+        # type: (Graph, Union[int, str], Union[int, str], int) -> None
+        self.arc[u][v] = Arc(u, v, capacity)
+        for node in (u, v):
+            if node not in self.vertex:
+                self.vertex[node] = Vertex(0, 0)
 
-    def get_max_flow(self, s, t):
-        self._preflow(s)
+    def get_max_flow(self):
+        # type: () -> int
+        self._preflow()
 
         while self._overflow_vertex() >= 0:
             u = self._overflow_vertex()
             if not self._push(u):
                 self._relabel(u)
 
-        return self.vertex[t].excess
+        return self.vertex['t'].e
 
     def _push(self, u):
-        for i, edge in filter(lambda e: e[1].u == u, enumerate(self.edge)):
-            if edge.flow == edge.capacity:
+        # type: (Graph, Union[int, str]) -> bool
+        for v in self.arc[u]:
+            if self.arc[u][v].flow == self.arc[u][v].capacity:
                 continue
 
-            if self.vertex[u].height > self.vertex[edge.v].height:
-                flow = min(edge.capacity - edge.flow, self.vertex[u].excess)
-                self.vertex[u].excess -= flow
-                self.vertex[edge.v].excess += flow
-                edge.flow += flow
-                self._update_reverse_edge_flow(i, flow)
+            if self.vertex[u].h > self.vertex[v].h:
+                flow = min(self.arc[u][v].capacity - self.arc[u][v].flow,
+                           self.vertex[u].e)
+                self.vertex[u].e -= flow
+                self.vertex[v].e += flow
+                self.arc[u][v].flow += flow
+
+                # update reverse edge flow
+                if u in self.arc[v]:
+                    self.arc[v][u].flow -= flow
+                else:
+                    self.arc[v][u] = Arc(v, u, capacity=flow, flow=0)
+
                 return True
         return False
 
     def _relabel(self, u):
+        # type: (Graph, int) -> None
         min_height = float("inf")
-        for edge in filter(lambda e: (e.u == u) and (e.flow != e.capacity),
-                           self.edge):
-            if self.vertex[edge.v].height < min_height:
-                min_height = self.vertex[edge.v].height
-                self.vertex[u].height = min_height + 1
+        for v in self.arc[u]:
+            if (self.arc[u][v].flow != self.arc[u][v].capacity) \
+                    and (self.vertex[v].h < min_height):
+                min_height = self.vertex[v].h
+                self.vertex[u].h = min_height + 1
 
-    def _preflow(self, s):  # int
+    def _preflow(self):
+        # type: () -> None
         """
         args:
-          s:  int source index
+          s:  Node source index
 
         returns:
           None
         """
-        self.vertex[s].height = self.n_vertices
-        for edge in filter(lambda e: e.u == s, self.edge):
-            edge.flow = edge.capacity
-            self.vertex[edge.v].excess += edge.flow
-            self.edge.append(Edge(u=edge.v, v=s, capacity=0, flow=-edge.flow))
-
-    def _update_reverse_edge_flow(self, i, flow):
-        u, v = self.edge[i].v, self.edge[i].u
-        for edge in filter(lambda e: e.v == v and e.u == u, self.edge):
-            edge.flow -= flow
-            break
-        else:
-            self.edge.append(Edge(u, v, capacity=flow, flow=0))
+        self.vertex['s'].h = len(self.vertex)
+        for adjacent in self.arc['s']:
+            self.arc['s'][adjacent].flow = self.arc['s'][adjacent].capacity
+            self.vertex[adjacent].e += self.arc['s'][adjacent].flow
+            self.arc[adjacent]['s'] = Arc(u=adjacent,
+                                          v='s',
+                                          capacity=0,
+                                          flow=-self.arc['s'][adjacent].flow)
 
     def _overflow_vertex(self):
-        for vertex_idx, vertex in enumerate(self.vertex[1:-1], 1):
-            if vertex.excess > 0:
-                return vertex_idx
+        # type: () -> int
+        for u in self.vertex:
+            if u not in ('s', 't') and self.vertex[u].e > 0:
+                return u
         else:
             return -1
-
-
-def _test_max_flow():
-    vertices = 6
-    g = Graph(vertices)
-    g.add_edge(0, 1, 16)
-    g.add_edge(0, 2, 13)
-    g.add_edge(1, 2, 10)
-    g.add_edge(2, 1, 4)
-    g.add_edge(1, 3, 12)
-    g.add_edge(2, 4, 14)
-    g.add_edge(3, 2, 9)
-    g.add_edge(3, 5, 20)
-    g.add_edge(4, 3, 7)
-    g.add_edge(4, 5, 4)
-    s = 0
-    t = 5
-    max_flow = g.get_max_flow(s, t)
-    print max_flow == 23
-
-    vertices = 4
-    g = Graph(vertices)
-    g.add_edge(0, 1, 1)
-    g.add_edge(0, 2, 100)
-    g.add_edge(1, 2, 100)
-    g.add_edge(2, 1, 1)
-    g.add_edge(1, 3, 100)
-    g.add_edge(2, 3, 1)
-    s = 0
-    t = 3
-    max_flow = g.get_max_flow(s, t)
-    print max_flow == 3
 
 
 def solution(entrances, exits, path):
     pass
 
 
+def _test_max_flow():
+    g = Graph()
+    g.add_arc("s", 1, 16)
+    g.add_arc("s", 2, 13)
+    g.add_arc(1, 2, 10)
+    g.add_arc(2, 1, 4)
+    g.add_arc(1, 3, 12)
+    g.add_arc(2, 4, 14)
+    g.add_arc(3, 2, 9)
+    g.add_arc(3, "t", 20)
+    g.add_arc(4, 3, 7)
+    g.add_arc(4, "t", 4)
+    max_flow = g.get_max_flow()
+    print max_flow == 23
+
+    g = Graph()
+    g.add_arc("s", 1, 1)
+    g.add_arc("s", 2, 100)
+    g.add_arc(1, 2, 100)
+    g.add_arc(2, 1, 1)
+    g.add_arc(1, "t", 100)
+    g.add_arc(2, "t", 1)
+    max_flow = g.get_max_flow()
+    print max_flow == 3
+
+
+
 def _test_solution():
     print solution([0, 1], [4, 5], [
         [0, 0, 4, 6, 0, 0],
-            [0, 0, 5, 2, 0, 0],
-            [0, 0, 0, 0, 4, 4],
-            [0, 0, 0, 0, 6, 6],
-            [0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0]
-        ]) == 16
+        [0, 0, 5, 2, 0, 0],
+        [0, 0, 0, 0, 4, 4],
+        [0, 0, 0, 0, 6, 6],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0]
+    ]) == 16
 
     print solution([0], [3],
                    [[0, 7, 0, 0],
@@ -249,11 +259,12 @@ def _test_solution():
 
 
 if __name__ == '__main__':
-    a = solution([0, 1], [4, 5], [
-        [0, 0, 4, 6, 0, 0],
-        [0, 0, 5, 2, 0, 0],
-        [0, 0, 0, 0, 4, 4],
-        [0, 0, 0, 0, 6, 6],
-        [0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0]
-    ])
+    _test_max_flow()
+    # a = solution([0, 1], [4, 5], [
+    #     [0, 0, 4, 6, 0, 0],
+    #     [0, 0, 5, 2, 0, 0],
+    #     [0, 0, 0, 0, 4, 4],
+    #     [0, 0, 0, 0, 6, 6],
+    #     [0, 0, 0, 0, 0, 0],
+    #     [0, 0, 0, 0, 0, 0]
+    # ])
