@@ -185,10 +185,10 @@ class Graph(object):
     def _preflow(self):
         # type: () -> None
         """
-        args:
+        Args:
           s:  Node source index
 
-        returns:
+        Returns:
           None
         """
         self.vertex['s'].h = len(self.vertex)
@@ -210,7 +210,43 @@ class Graph(object):
 
 
 def solution(entrances, exits, path):
-    pass
+    # type: (list[int], list[int], list[list[int]]) -> int
+    """
+    Find the max flow in the given graph.
+
+    Find the max flow of the supplied path using a push-relabel max flow
+      algorithm.  A synethic source and synethic sink are supplied to account
+      for multiple-entrances and multiple-exits.
+
+    Args:
+      entrances: list[int]
+        The list of source locations on the path.
+      exits:  list[int]
+        The list of sink locations on the path.
+      path:  list[list[int]]
+        The list of corridors with their int flow capacity to the indexed
+          corridor.  For example path[A][B] = C is equivalent to edge (a, b)
+          having capacity C.
+
+    Returns:
+      Integer max flow
+
+    """
+    g = Graph()
+
+    max_capacity = sum([sum(path[idx]) for idx in entrances])
+    for idx in entrances:
+        g.add_arc('s', idx, capacity=max_capacity)
+
+    for idx in exits:
+        g.add_arc(idx, 't', capacity=max_capacity)
+
+    for u, corridor in enumerate(path):
+        for v, capacity in enumerate(corridor):
+            g.add_arc(u, v, capacity=capacity)
+
+    max_flow = g.get_max_flow()
+    return max_flow
 
 
 def _test_max_flow():
@@ -259,7 +295,8 @@ def _test_solution():
 
 
 if __name__ == '__main__':
-    _test_max_flow()
+    # _test_max_flow()
+    _test_solution()
     # a = solution([0, 1], [4, 5], [
     #     [0, 0, 4, 6, 0, 0],
     #     [0, 0, 5, 2, 0, 0],
