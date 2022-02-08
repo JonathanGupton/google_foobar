@@ -171,15 +171,17 @@ def least_common_multiple(a, b):
     return abs(a * b) // fractions.gcd(a, b)
 
 
-def cycle_index_product(r, c):
-    pass
-
-
 def solution(h, w, s):
     rows, cols = symmetric_cycle_index(h), symmetric_cycle_index(w)
-
-    for r, c in product(rows, cols):
-        pass
+    output = 0
+    for row, col in product(rows, cols):
+        result = 1
+        coefficient = row[0] * col[0]
+        for l, r in product(row[1], col[1]):
+            exponent = (l[0] * l[1] * r[0] * r[1]) / least_common_multiple(l[0], r[0])
+            result *= s ** exponent
+        output += coefficient * result
+    return str(output)
 
 
 def _test_make_permutation_groups():
@@ -246,11 +248,15 @@ def _test_symmetric_cycle_index():
 
 
 def _test_solution():
-    print solution(2, 2, 2) == 7
-    print solution(2, 3, 4) == 430
+    print solution(2, 2, 2) == "7"
+    print solution(2, 3, 1) == "1"
+    print solution(2, 3, 2) == "13"
+    print solution(2, 3, 3) == "92"
+    print solution(2, 3, 4) == "430"
+    print solution(12, 12, 20) == "430"
 
 
 if __name__ == '__main__':
     _test_symmetric_cycle_index()
     _test_make_permutation_groups()
-    # print make_permutation_groups(5)
+    _test_solution()
