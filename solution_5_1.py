@@ -121,7 +121,10 @@ from itertools import product
 from math import factorial
 
 
-def make_permutation_groups(degree, max_val=None, permutation_head=None, permutation_groups=None):
+def make_permutation_groups(degree,
+                            max_val=None,
+                            permutation_head=None,
+                            permutation_groups=None):
     if permutation_head is None:
         permutation_head = []
 
@@ -253,7 +256,8 @@ def _test_solution():
     print solution(2, 3, 2) == "13"
     print solution(2, 3, 3) == "92"
     print solution(2, 3, 4) == "430"
-    print solution(12, 12, 20) == "430"
+    print solution(12, 12,
+                   20) == "97195340925396730736950973830781340249131679073592360856141700148734207997877978005419735822878768821088343977969209139721682171487959967012286474628978470487193051591840"
 
 
 if __name__ == '__main__':
